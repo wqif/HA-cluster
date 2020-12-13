@@ -1,0 +1,81 @@
+version: '3'
+
+services:
+  rabbitmq1:
+    image: rabbitmq:management
+    restart: always
+    networks:
+      rabbitmq_net:
+        ipv4_address: 172.20.0.11
+    ports:
+      - "5673:5672"
+    container_name: rabbitmq1
+    volumes:
+      - ./rabbitmq1:/var/lib/rabbitmq
+      - /etc/localtime:/etc/localtime:ro
+    extra_hosts:
+      - "rabbitmq1:172.20.0.11"
+      - "rabbitmq2:172.20.0.12"
+      - "rabbitmq3:172.20.0.13"
+    entrypoint:
+      - bash
+      - -c
+      - |
+          echo "RABBITMQ_NODENAME=test_rabbit@rabbitmq1" > /etc/rabbitmq/rabbitmq-env.conf
+          rabbitmq-server
+
+  rabbitmq2:
+    image: rabbitmq:management
+    restart: always
+    networks:
+      rabbitmq_net:
+        ipv4_address: 172.20.0.12
+    ports:
+      - "5674:5672"
+    container_name: rabbitmq2
+    volumes:
+      - ./rabbitmq2:/var/lib/rabbitmq
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - rabbitmq1
+    extra_hosts:
+      - "rabbitmq1:172.20.0.11"
+      - "rabbitmq2:172.20.0.12"
+      - "rabbitmq3:172.20.0.13"
+    entrypoint:
+      - bash
+      - -c
+      - |
+          echo "RABBITMQ_NODENAME=test_rabbit@rabbitmq2" > /etc/rabbitmq/rabbitmq-env.conf
+          rabbitmq-server
+
+  rabbitmq3:
+    image: rabbitmq:management
+    restart: always
+    networks:
+      rabbitmq_net:
+        ipv4_address: 172.20.0.13
+    ports:
+      - "5675:5672"
+    container_name: rabbitmq3
+    volumes:
+      - ./rabbitmq3:/var/lib/rabbitmq
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - rabbitmq1
+    extra_hosts:
+      - "rabbitmq1:172.20.0.11"
+      - "rabbitmq2:172.20.0.12"
+      - "rabbitmq3:172.20.0.13"
+    entrypoint:
+      - bash
+      - -c
+      - |
+          echo "RABBITMQ_NODENAME=test_rabbit@rabbitmq3" > /etc/rabbitmq/rabbitmq-env.conf
+          rabbitmq-server
+
+networks:
+  rabbitmq_net:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 # 子网

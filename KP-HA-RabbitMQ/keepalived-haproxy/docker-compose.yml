@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  rabbitmq-haproxy-master:
+    #image: haproxy
+    image: keepalived-haproxy
+    restart: always
+    networks:
+      extnetwork:
+        ipv4_address: 172.20.0.21
+    privileged: true
+    container_name: haproxy_master
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./master/config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./master/config/keepalived.conf:/etc/keepalived/keepalived.conf
+      - ./rsyslog/haproxy.conf:/etc/rsyslog.d/haproxy.conf
+      - ./rsyslog/rsyslog.conf:/etc/rsyslog.conf
+      - ./master/logs/:/var/log/:rw
+    entrypoint:
+      - bash    
+      - -c
+      - |
+          service keepalived start
+          /docker-entrypoint.sh haproxy -f /usr/local/etc/haproxy/haproxy.cfg
+
+  rabbitmq-haproxy-slave:
+    #image: haproxy
+    image: keepalived-haproxy
+    restart: always
+    networks:
+      extnetwork:
+        ipv4_address: 172.20.0.22
+    privileged: true
+    container_name: haproxy_slave
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./slave/config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./slave/config/keepalived.conf:/etc/keepalived/keepalived.conf
+      - ./rsyslog/haproxy.conf:/etc/rsyslog.d/haproxy.conf
+      - ./rsyslog/rsyslog.conf:/etc/rsyslog.conf
+      - ./slave/logs/:/var/log/:rw
+    entrypoint:
+      - bash    
+      - -c
+      - |
+          service keepalived start
+          /docker-entrypoint.sh haproxy -f /usr/local/etc/haproxy/haproxy.cfg
+
+networks:
+  extnetwork:
+    external:
+      name: rabbitmq_cluster_rabbitmq_net
